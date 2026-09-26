@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>بازی ارزش مکانی مهره‌ها - کلاس 502</title>
+<style>
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:Tahoma,Arial,sans-serif;
+    background:linear-gradient(135deg,#f7d6ef,#d8f0ff);
+    color:#25213b;
+  }
+  .wrap{max-width:1000px;margin:auto;padding:18px}
+  header{
+    background:#ffffffdd;border-radius:24px;padding:18px 22px;
+    box-shadow:0 8px 25px #0002;margin-bottom:16px;
+  }
+  h1{margin:0 0 6px;font-size:28px}
+  .sub{font-size:14px;color:#665f7a}
+  .game{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+  .card{
+    background:#fff;border-radius:24px;padding:18px;
+    box-shadow:0 8px 25px #0002;
+  }
+  #board{
+    width:min(100%,620px);aspect-ratio:1/1;margin:auto;position:relative;
+    border-radius:28px;background:#b59ac9;padding:55px;
+    box-shadow:inset 0 0 0 8px #7e5c8e;
+  }
+  .ring{position:absolute;border:9px solid #7e5c8e;border-radius:22px;inset:28px}
+  .inner{position:absolute;inset:105px;border:8px solid #7e5c8e;border-radius:20px;background:#f8c77e}
+  .center{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:120px;height:120px;border-radius:22px;background:#f6b867;
+    display:flex;align-items:center;justify-content:center;
+    font-size:34px;font-weight:bold;border:5px solid #d9904c;
+  }
+  .zone{
+    position:absolute;display:flex;align-items:center;justify-content:center;
+    font-weight:bold;font-size:20px;color:#3d2948;
+    width:100px;height:70px;border-radius:16px;background:#f7e8f7;
+    border:4px solid #8b6a99;cursor:pointer;user-select:none;
+    transition:.15s;box-shadow:0 3px 8px #0002;
+  }
+  .zone:hover{transform:scale(1.05)}
+  .z1000{top:45px;left:50%;transform:translateX(-50%)}
+  .z100{top:95px;left:52px}
+  .z10{top:95px;right:52px}
+  .z1{bottom:95px;left:52px}
+  .z100b{bottom:95px;right:52px}
+  .z10b{left:50%;bottom:45px;transform:translateX(-50%)}
+  .z1b{top:50%;left:38px;transform:translateY(-50%)}
+  .z1000b{top:50%;right:38px;transform:translateY(-50%)}
+  .off{bottom:8px;left:50%;transform:translateX(-50%);background:#eee;border-color:#aaa}
+  .marbles{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:12px 0}
+  .marble{
+    width:28px;height:28px;border-radius:50%;border:3px solid #fff;
+    box-shadow:0 2px 5px #0004;cursor:pointer;
+  }
+  .p1{background:#e74c3c}.p2{background:#3498db}
+  button{
+    border:0;border-radius:14px;padding:11px 15px;font-size:15px;
+    cursor:pointer;background:#6c4ab6;color:white;margin:4px;
+  }
+  button.secondary{background:#eee;color:#333}
+  .score{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .scorebox{padding:14px;border-radius:18px;background:#f5f2ff;text-align:center}
+  .scorebox b{font-size:23px;display:block;margin-top:4px}
+  .turn{padding:12px;border-radius:16px;background:#fff2b8;text-align:center;font-weight:bold;margin-bottom:10px}
+  .rules{line-height:1.9;font-size:14px}
+  .history{max-height:190px;overflow:auto;background:#fafafa;border-radius:14px;padding:10px;font-size:13px}
+  .legend{display:flex;gap:12px;justify-content:center;font-size:13px}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .dot{width:14px;height:14px;border-radius:50%}
+  @media(max-width:760px){.game{grid-template-columns:1fr}#board{padding:35px}.zone{width:78px;height:58px;font-size:16px}.z100{left:18px}.z10{right:18px}.z1{left:18px}.z100b{right:18px}}
+
+  .dice-area{display:flex;justify-content:center;gap:18px;margin:10px 0 4px;direction:ltr}
+  .die{
+    width:62px;height:62px;border-radius:14px;background:#fff;
+    border:4px solid #6c4ab6;display:flex;align-items:center;justify-content:center;
+    font-size:34px;font-weight:bold;box-shadow:0 4px 10px #0003;
+  }
+  .rolling{animation:shake .45s linear}
+  @keyframes shake{
+    0%,100%{transform:rotate(0) scale(1)}
+    25%{transform:rotate(-12deg) scale(1.08)}
+    50%{transform:rotate(12deg) scale(1.08)}
+    75%{transform:rotate(-8deg) scale(1.05)}
+  }
+  .dice-note{text-align:center;font-size:13px;color:#665f7a}
+
+  #placedMarbles{position:absolute;inset:0;z-index:20;pointer-events:none}
+  .placed{
+    position:absolute;width:24px;height:24px;border-radius:50%;
+    border:3px solid white;box-shadow:0 3px 7px #0005;
+    transform:translate(-50%,-50%);
+  }
+  .placed.p1{background:#e74c3c}.placed.p2{background:#3498db}
+
+  #movingMarble{
+    position:absolute;z-index:40;width:30px;height:30px;border-radius:50%;
+    border:3px solid #fff;box-shadow:0 4px 9px #0005;
+    transform:translate(-50%,-50%) scale(.4);
+    transition:left .45s ease,top .45s ease,transform .45s ease;
+    pointer-events:none;display:none;
+  }
+  #movingMarble.red{background:#e74c3c}
+  #movingMarble.blue{background:#3498db}
+
+  .landed-label{
+    margin:8px auto 12px;max-width:360px;text-align:center;
+    padding:9px 14px;border-radius:14px;background:#fff3bf;
+    border:2px solid #d8b34b;font-weight:bold;font-size:16px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>🎯 بازی ارزش مکانی مهره‌ها</h1>
+  <div class="sub">سازنده: <b>Moein Nasrian</b> — <b>Class 502</b> — <b>Grade 5</b></div>
+</header>
+
+<div class="game">
+<section class="card">
+  <div id="turn" class="turn">نوبت بازیکن ۱ 🔴</div>
+  <div class="dice-area">
+    <div id="die1" class="die">⚀</div>
+  </div>
+  <div style="text-align:center">
+    <button id="roll">🎲 پرتاب تاس</button>
+  </div>
+  <div id="diceResult" class="dice-note">تاس را پرتاب کن؛ مهره روی یکی از عددهای صفحه می‌افتد.</div>
+<div id="landedLabel" class="landed-label" aria-live="polite">هنوز مهره‌ای نیفتاده</div>
+  <div id="board">
+    <div id="movingMarble"></div>
+    <div id="placedMarbles"></div>
+    <div class="ring"></div>
+    <div class="inner"></div>
+    <div class="center">بازی</div>
+    <div class="zone z1000" data-v="1000">۱۰۰۰</div>
+    <div class="zone z100" data-v="100">۱۰۰</div>
+    <div class="zone z10" data-v="10">۱۰</div>
+    <div class="zone z1" data-v="1">۱</div>
+    <div class="zone z100b" data-v="100">۱۰۰</div>
+    <div class="zone z10b" data-v="10">۱۰</div>
+    <div class="zone z1b" data-v="1">۱</div>
+    <div class="zone z1000b" data-v="1000">۱۰۰۰</div>
+    <div class="zone off" data-v="1">خارج از صفحه = ۱</div>
+  </div>
+  <p style="text-align:center;margin-bottom:4px">برای انداختن مهره، روی یکی از قسمت‌های صفحه کلیک کن.</p>
+  <div id="marbles" class="marbles"></div>
+  <div style="text-align:center">
+    <button id="reset">🔄 شروع بازی جدید</button>
+    <button id="finish" class="secondary">🏁 پایان زودتر</button>
+  </div>
+</section>
+
+<aside class="card">
+  <h2 style="margin-top:0">📊 امتیازها</h2>
+  <div class="score">
+    <div class="scorebox">بازیکن ۱ 🔴<b id="s1">0</b></div>
+    <div class="scorebox">بازیکن ۲ 🔵<b id="s2">0</b></div>
+  </div>
+
+  <h3>📜 قانون بازی</h3>
+  <div class="rules">
+    هر بازیکن <b>۸ مهره</b> دارد. در هر نوبت یک مهره را انتخاب کن و روی صفحه بگذار.
+    عدد قسمت انتخاب‌شده به امتیاز بازیکن اضافه می‌شود.
+    اگر مهره خارج از صفحه بیفتد، ارزش آن <b>۱</b> است.
+    بعد از ۱۶ مهره، عددها جمع می‌شوند و بازیکنی که عدد بزرگ‌تری داشته باشد برنده است.
+  </div>
+
+  <h3>🧾 مهره‌های بازی</h3>
+  <div class="legend">
+    <span><i class="dot p1"></i> بازیکن ۱</span>
+    <span><i class="dot p2"></i> بازیکن ۲</span>
+  </div>
+
+  <h3>📌 گزارش</h3>
+  <div id="history" class="history">هنوز حرکتی انجام نشده است.</div>
+</aside>
+</div>
+</div>
+
+<script>
+let player=1, counts=[8,8], scores=[0,0], move=0, history=[];
+const turn=document.getElementById('turn'), marbles=document.getElementById('marbles');
+const s1=document.getElementById('s1'), s2=document.getElementById('s2'), log=document.getElementById('history');
+
+function fa(n){return n.toLocaleString('fa-IR')}
+const diceFaces=['⚀','⚁','⚂','⚃','⚄','⚅'];
+let diceRolled=false;
+
+document.getElementById('roll').onclick=()=>{
+  if(counts[player-1]<=0){
+    alert('مهره‌های این بازیکن تمام شده‌اند!');
+    return;
+  }
+
+  const p=player;
+  const zones=[...document.querySelectorAll('.zone')];
+  const target=zones[Math.floor(Math.random()*zones.length)];
+  const value=Number(target.dataset.v);
+  const die=Math.floor(Math.random()*6)+1;
+
+  // Show the rolled die, but the die itself stays above the board.
+  document.getElementById('die1').textContent=diceFaces[die-1];
+
+  const board=document.getElementById('board');
+  const br=board.getBoundingClientRect();
+  const tr=target.getBoundingClientRect();
+  const x=tr.left+tr.width/2-br.left;
+  const y=tr.top+tr.height/2-br.top;
+
+  const marble=document.getElementById('movingMarble');
+  marble.className=(p===1?'red':'blue');
+  marble.style.display='block';
+  marble.style.left='50%';
+  marble.style.top='12%';
+  marble.style.transform='translate(-50%,-50%) scale(.4)';
+
+  requestAnimationFrame(()=>{
+    marble.style.left=x+'px';
+    marble.style.top=y+'px';
+    marble.style.transform='translate(-50%,-50%) scale(1)';
+  });
+
+  counts[p-1]--;
+  scores[p-1]+=value;
+  history.push(`بازیکن ${p===1?'🔴':'🔵'} مهره را روی <b>${fa(value)}</b> انداخت → <b>+${fa(value)} امتیاز</b>.<br>`);
+  document.getElementById('diceResult').textContent=
+    `🎯 مهره ${p===1?'🔴 قرمز':'🔵 آبی'} روی ${fa(value)} افتاد → +${fa(value)} امتیاز`;
+  document.getElementById('landedLabel').textContent=
+    `📍 مهره روی عدد ${fa(value)} افتاد!  +${fa(value)} امتیاز`;
+
+  setTimeout(()=>{
+    const finalMarble=document.createElement('div');
+    finalMarble.className='placed '+(p===1?'p1':'p2');
+    finalMarble.style.left=x+'px';
+    finalMarble.style.top=y+'px';
+    document.getElementById('placedMarbles').appendChild(finalMarble);
+    marble.style.display='none';
+
+    if(counts[0]===0 && counts[1]===0){
+      render();
+      setTimeout(()=>{
+        const result=scores[0]===scores[1]
+          ? '🤝 بازی مساوی شد!'
+          : `🏆 بازیکن ${scores[0]>scores[1]?'۱ 🔴':'۲ 🔵'} امتیاز بیشتری گرفت!`;
+        alert(`${result}\n\n🔴 بازیکن ۱: ${fa(scores[0])} امتیاز\n🔵 بازیکن ۲: ${fa(scores[1])} امتیاز`);
+      },150);
+      return;
+    }
+    player=player===1?2:1;
+    render();
+  },500);
+};
+
+function render(){
+  turn.textContent=`نوبت بازیکن ${player} ${player===1?'🔴':'🔵'} — ${counts[player-1]} مهره باقی مانده`;
+  marbles.innerHTML='';
+  for(let p=1;p<=2;p++){
+    for(let i=0;i<counts[p-1];i++){
+      const m=document.createElement('div');
+      m.className='marble '+(p===1?'p1':'p2');
+      m.title=`مهره بازیکن ${p}`;
+      marbles.appendChild(m);
+    }
+  }
+  s1.textContent=fa(scores[0]); s2.textContent=fa(scores[1]);
+  log.innerHTML=history.length?history.map(x=>`<div>${x}</div>`).reverse().join(''):'هنوز حرکتی انجام نشده است.';
+}
+function play(value, target){
+  if(counts[player-1]<=0){return}
+  if(!diceRolled){
+    alert('🎲 اول تاس‌ها را پرتاب کن!');
+    return;
+  }
+  const p=player;
+  counts[p-1]--; scores[p-1]+=Number(value); move++;
+
+  // Put a visible marble exactly where the player clicked.
+  const z = [...document.querySelectorAll('.zone')].find(x => x.dataset.v === String(value) && !x.classList.contains('used-temp'));
+  const clicked = target || z;
+  if(target){
+    const board = document.getElementById('board');
+    const bm = target.getBoundingClientRect();
+    const br = board.getBoundingClientRect();
+    const marble = document.createElement('div');
+    marble.className = 'placed ' + (p===1?'p1':'p2');
+    marble.style.left = ((bm.left + bm.width/2) - br.left) + 'px';
+    marble.style.top = ((bm.top + bm.height/2) - br.top) + 'px';
+    document.getElementById('placedMarbles').appendChild(marble);
+  }
+
+  history.push(`بازیکن ${p===1?'🔴':'🔵'} مهره را روی <b>${fa(value)}</b> گذاشت و ${fa(value)} امتیاز گرفت.<br>`);
+  if(counts[0]===0 && counts[1]===0){
+    render();
+    setTimeout(()=>{
+      let msg=scores[0]===scores[1]?'🤝 بازی مساوی شد!':`🏆 بازیکن ${scores[0]>scores[1]?'۱ 🔴':'۲ 🔵'} برنده شد!`;
+      alert(`${msg}\n\nامتیاز بازیکن ۱: ${fa(scores[0])}\nامتیاز بازیکن ۲: ${fa(scores[1])}`);
+    },80);
+    return;
+  }
+  player=player===1?2:1;
+  diceRolled=false;
+  const oldDie2=document.getElementById('boardDie');
+  if(oldDie2) oldDie2.remove();
+  document.getElementById('die1').textContent='⚀';
+  document.getElementById('diceResult').textContent='تاس را پرتاب کن؛ مهره روی یکی از عددهای صفحه می‌افتد.';
+  document.getElementById('landedLabel').textContent='هنوز مهره‌ای نیفتاده';
+  render();
+}
+document.querySelectorAll('.zone').forEach(z=>z.style.cursor='default');
+document.getElementById('reset').onclick=()=>{
+  player=1;counts=[8,8];scores=[0,0];move=0;history=[];
+  document.getElementById('placedMarbles').innerHTML='';
+  const oldDie=document.getElementById('boardDie');
+  if(oldDie) oldDie.remove();
+  document.getElementById('die1').textContent='⚀';
+  document.getElementById('diceResult').textContent='تاس را پرتاب کن؛ مهره روی یکی از عددهای صفحه می‌افتد.';
+  document.getElementById('landedLabel').textContent='هنوز مهره‌ای نیفتاده';
+  diceRolled=false;
+  render();
+};
+document.getElementById('finish').onclick=()=>{
+  const msg=scores[0]===scores[1]?'فعلاً مساوی هستید.':`فعلاً بازیکن ${scores[0]>scores[1]?'۱':'۲'} امتیاز بیشتری دارد.`;
+  alert(`${msg}\nبازیکن ۱: ${fa(scores[0])}\nبازیکن ۲: ${fa(scores[1])}`);
+};
+render();
+</script>
+</body>
+</html>
